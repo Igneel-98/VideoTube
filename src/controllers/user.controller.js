@@ -31,8 +31,11 @@ const registerUser = asyncHandler( async (req, res) => {
 
     // check for avatar and coverImage
     const avatarLocalPath = req.files?.avatar[0]?.path
-    const coverImageLoaclPath = req.files?.coverImage[0]?.path
-
+    
+    let coverImageLocalPath;
+    if (req.files?.coverImage && req.files.coverImage.length > 0) {
+        coverImageLocalPath = req.files.coverImage[0].path;
+    }
     // console.log(avatarLocalPath);
     // console.log(coverImageLoaclPath);
     
@@ -44,16 +47,13 @@ const registerUser = asyncHandler( async (req, res) => {
     // upload to cloudinary
     const avatar = await uploadOnCloudinary(avatarLocalPath)
     
-    
-
     let coverImage
-    if(coverImageLoaclPath){
-        coverImage = await uploadOnCloudinary(coverImageLoaclPath)
+    if(coverImageLocalPath){
+        coverImage = await uploadOnCloudinary(coverImageLocalPath)
     }
     if(!avatar){
         throw new ApiError(500, "Something went wrong while uploading avatar.")
     }
-
     // console.log("AVATAR: " + avatar.url);
     // console.log("COVER: "+ coverImage.url);
     

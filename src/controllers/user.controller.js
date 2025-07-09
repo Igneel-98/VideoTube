@@ -1,5 +1,5 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { Users } from "../models/user.model.js";
+import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { uploadOnCloudinary } from "../services/cloudinary.service.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -22,7 +22,7 @@ const registerUser = asyncHandler( async (req, res) => {
     }
 
     // check if user exists already
-    const existedUser = await Users.findOne({
+    const existedUser = await User.findOne({
         $or: [{username}, {email}]
     })
     if(existedUser) {
@@ -59,7 +59,7 @@ const registerUser = asyncHandler( async (req, res) => {
     
 
     // create user object
-    const user = await Users.create({
+    const user = await User.create({
         fullName,
         email,
         password,
@@ -69,7 +69,7 @@ const registerUser = asyncHandler( async (req, res) => {
     })
 
     // remove password and refreshToken from response
-    const createdUser = await Users.findById(user._id).select("-password -refreshToken")
+    const createdUser = await User.findById(user._id).select("-password -refreshToken")
 
     // check created user
     if(!createdUser){
@@ -84,7 +84,18 @@ const registerUser = asyncHandler( async (req, res) => {
 
 const generateAccessandRefreshToken = async (userId) => {
     try {
-        const user = Users.findById(userId)
+        // User.findById() returns a Promise, not the actual user data. 
+        // So user was a Promise object, not a User document.
+        // await essentially "unwraps" the Promise and gives you the actual resolved value, 
+        // which is why your methods became available after adding it!
+        const user = await User.findById(userId)
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        // Debug: Check if methods exist
+        // console.log("generateAccessToken method exists:", typeof user.generateAccessToken);
+        // console.log("generateRefreshToken method exists:", typeof user.generateRefreshToken);
     
         const accessToken = await user.generateAccessToken()
         const refreshToken = await user.generateRefreshToken()
@@ -94,6 +105,7 @@ const generateAccessandRefreshToken = async (userId) => {
     
         return { accessToken, refreshToken }
     } catch (error) {
+        // console.error("Token generation error:", error);
         throw new ApiError(500, "Something went wrong while generating Refresh and Access Tokens.")
     }
 }
@@ -101,6 +113,9 @@ const generateAccessandRefreshToken = async (userId) => {
 const loginUser = asyncHandler( async (req, res) => {
     
     // 1. getting data
+    if (!req.body) {
+        return new ApiError(400, "Request body is required.");
+    }
     const { email, username, password} = req.body
 
     // 2. check username or email
@@ -109,7 +124,7 @@ const loginUser = asyncHandler( async (req, res) => {
     }
 
     // 3. find the user 
-    const user = await Users.findOne({
+    const user = await User.findOne({
         $or: [{username}, {email}]
     })
 
@@ -131,7 +146,7 @@ const loginUser = asyncHandler( async (req, res) => {
     const { accessToken, refreshToken } = await generateAccessandRefreshToken(user._id)
 
     // send cookie
-    const loggedInUser = await Users.findById(user._id).select("-password -refreshToken")
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
     const options = {
         httponly: true,

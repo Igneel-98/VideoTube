@@ -460,7 +460,7 @@ const getWatchHistory = asyncHandler(async(req, res) => {
                     {
                         $lookup: {
                             from: "users",          // In owner field we get everything but in array format we need to fix this 
-                            localField: "owner",    // array need to further loop from zero 
+                            localField: "owner",    // array need to further loop from zero
                             foreignField: "_id",    // Also making frontend work easier
                             as: "owner",
                             pipeline: [

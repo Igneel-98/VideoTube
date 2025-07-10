@@ -5,13 +5,15 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/server.js",
+    "swagger": "node src/config/swagger.js"
   },
   "author": "siddheswar",
   "license": "ISC",
   "devDependencies": {
     "nodemon": "^3.1.10",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "swagger-autogen": "^2.23.7"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -22,6 +24,7 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.2",
-    "multer": "^2.0.1"
+    "multer": "^2.0.1",
+    "swagger-ui-express": "^5.0.1"
   }
 }

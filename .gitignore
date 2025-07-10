@@ -117,4 +117,7 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+# Generated swagger files
+src/docs/generated/
+
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Node

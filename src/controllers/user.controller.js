@@ -1,8 +1,10 @@
+import jwt from "jsonwebtoken";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
-import { uploadOnCloudinary } from "../services/cloudinary.service.js";
+import { uploadOnCloudinary, deleteImageFromCloudinary } from "../services/cloudinary.service.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import mongoose from "mongoose";
 
 
 const registerUser = asyncHandler( async (req, res) => {
@@ -30,7 +32,7 @@ const registerUser = asyncHandler( async (req, res) => {
     }
 
     // check for avatar and coverImage
-    const avatarLocalPath = req.files?.avatar[0]?.path
+    const avatarLocalPath = req.files?.avatar?.[0]?.path
     
     let coverImageLocalPath;
     if (req.files?.coverImage && req.files.coverImage.length > 0) {
@@ -40,20 +42,33 @@ const registerUser = asyncHandler( async (req, res) => {
     // console.log(coverImageLoaclPath);
     
     
-    if(!avatarLocalPath){
-        throw new ApiError(400, "Avatar is required.")
-    }
+    // if(!avatarLocalPath){
+    //     throw new ApiError(400, "Avatar is required.")
+    // }
 
     // upload to cloudinary
-    const avatar = await uploadOnCloudinary(avatarLocalPath)
-    
+
+    // const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+    let avatar;
+    if(avatarLocalPath){
+        avatar = await uploadOnCloudinary(avatarLocalPath)
+        if(!avatar){
+            throw new ApiError(500, "Something went wrong while uploading Avatar.")
+        }
+    }
+
     let coverImage
     if(coverImageLocalPath){
         coverImage = await uploadOnCloudinary(coverImageLocalPath)
+        if(!coverImage){
+            throw new ApiError(500, "Something went wrong while uploading coverImage.")
+        }
     }
-    if(!avatar){
-        throw new ApiError(500, "Something went wrong while uploading avatar.")
-    }
+    
+    // if(!avatar){
+    //     throw new ApiError(500, "Something went wrong while uploading avatar.")
+    // }
     // console.log("AVATAR: " + avatar.url);
     // console.log("COVER: "+ coverImage.url);
     
@@ -64,7 +79,7 @@ const registerUser = asyncHandler( async (req, res) => {
         email,
         password,
         username: username.toLowerCase(),
-        avatar: avatar.url,
+        avatar: avatar?.url || "",
         coverImage: coverImage?.url || ""
     })
 
@@ -78,11 +93,11 @@ const registerUser = asyncHandler( async (req, res) => {
 
     // response
     return res.status(201).json(
-        new ApiResponse(200, createdUser, "User Registered Successfully.")
+        new ApiResponse(201, createdUser, "User Registered Successfully.")
     )
 })
 
-const generateAccessandRefreshToken = async (userId) => {
+const generateAccessAndRefreshTokens = async (userId) => {
     try {
         // User.findById() returns a Promise, not the actual user data. 
         // So user was a Promise object, not a User document.
@@ -143,13 +158,13 @@ const loginUser = asyncHandler( async (req, res) => {
     }
 
     // Access Token and Refresh Token
-    const { accessToken, refreshToken } = await generateAccessandRefreshToken(user._id)
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id)
 
     // send cookie
     const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
     const options = {
-        httponly: true,
+        httpOnly: true,
         secure: true
     }
 
@@ -189,7 +204,12 @@ const logoutUser = asyncHandler(async(req, res) => {
     .status(200)
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, {}, "User logged Out"))
+    .json(new ApiResponse(200, 
+        {
+            username: req.user.username,
+            email: req.user.email,
+            fullName: req.user.fullName
+        }, "User logged Out"))
 })
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
@@ -224,7 +244,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             httpOnly: true,
             secure: true
         }
-        const {accessToken, newRefreshToken} = await generateAccessAndRefereshTokens(user._id)
+        const {accessToken, newRefreshToken} = await generateAccessAndRefreshTokens(user._id)
     
         return res
         .status(200)
@@ -310,13 +330,31 @@ const updateUserAvatar = asyncHandler(async(req, res) => {
         throw new ApiError(400, "Avatar file is missing")
     }
 
-    //TODO: delete old image
+    //delete old image
+    const avatarPublicURL = req.user?.avatar || "";
 
+    if (avatarPublicURL) {
+        try {
+            const res = await deleteImageFromCloudinary(avatarPublicURL);
+            if(res.result !== "ok") {
+                throw new ApiError(404, "Previous Avatar Deletion Error", [res.result]);
+            }
+            console.log(res.result);
+        } catch (error) {
+            // HALT the process intentionally
+            throw new ApiError(
+                500,
+                "Failed to delete previous avatar from Cloudinary. Please try again later.",
+                [error.message]
+            );
+        }
+    }
+
+    // Upload new image
     const avatar = await uploadOnCloudinary(avatarLocalPath)
 
     if (!avatar.url) {
-        throw new ApiError(400, "Error while uploading on avatar")
-        
+        throw new ApiError(400, "Error while uploading avatar");  
     }
 
     const user = await User.findByIdAndUpdate(
@@ -343,8 +381,27 @@ const updateUserCoverImage = asyncHandler(async(req, res) => {
         throw new ApiError(400, "Cover image file is missing")
     }
 
-    //TODO: delete old image
+    //delete old image
+    const CoverImagePublicURL = req.user?.coverImage || "";
 
+    if (CoverImagePublicURL) {
+        try {
+            const res = await deleteImageFromCloudinary(CoverImagePublicURL);
+            if(res.result !== "ok") {
+                throw new ApiError(404, "Previous Cover Image Deletion Error", [res.result]);
+            }
+            console.log(res.result);
+        } catch (error) {
+            // HALT the process intentionally
+            throw new ApiError(
+                500,
+                "Failed to delete previous cover image from Cloudinary. Please try again later.",
+                [error.message]
+            );
+        }
+    }
+
+    // Upload New Cover Image
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
     if (!coverImage.url) {

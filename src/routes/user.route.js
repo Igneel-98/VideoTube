@@ -17,7 +17,9 @@ import { verifyJWT } from "../middleware/auth.middleware.js";
 
 const router = Router()
 
+
 router.route("/register").post(
+    // #swagger.tags = ['auth']
     upload.fields([
         {
             name: "avatar",
@@ -31,19 +33,65 @@ router.route("/register").post(
     registerUser
 )
 
-router.route("/login").post(loginUser)
+
+router.route("/login").post(
+    loginUser 
+    // #swagger.tags = ['auth']
+)  
 
 //secured routes
-router.route("/logout").post(verifyJWT,  logoutUser)
-router.route("/refresh-token").post(refreshAccessToken)
-router.route("/change-password").post(verifyJWT, changeCurrentPassword)
-router.route("/current-user").get(verifyJWT, getCurrentUser)
-router.route("/update-account").patch(verifyJWT, updateAccountDetails)
 
-router.route("/update-avatar").patch(verifyJWT, upload.single("avatar"), updateUserAvatar)
-router.route("/update-cover-image").patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage)
+router.route("/logout").post(
+    // #swagger.tags = ['auth']
+    verifyJWT,  
+    logoutUser
+)
 
-router.route("/c/:username").get(verifyJWT, getUserChannelProfile)
-router.route("/history").get(verifyJWT, getWatchHistory)
+router.route("/refresh-token").post(
+    refreshAccessToken
+    // #swagger.tags = ['auth']
+)
+
+router.route("/change-password").post(
+    // #swagger.tags = ['auth']
+    verifyJWT, 
+    changeCurrentPassword
+)
+
+router.route("/current-user").get(
+    // #swagger.tags = ['profile']
+    verifyJWT, 
+    getCurrentUser
+)
+
+router.route("/update-account").patch(
+    // #swagger.tags = ['profile']
+    verifyJWT, 
+    updateAccountDetails
+)
+
+router.route("/update-avatar").patch(
+    // #swagger.tags = ['profile']
+    verifyJWT, 
+    upload.single("avatar"), 
+    updateUserAvatar
+)
+router.route("/update-cover-image").patch(
+    // #swagger.tags = ['profile']
+    verifyJWT, 
+    upload.single("coverImage"), 
+    updateUserCoverImage
+)
+
+router.route("/c/:username").get(
+    // #swagger.tags = ['channel']
+    verifyJWT, 
+    getUserChannelProfile
+)
+router.route("/history").get(
+    // #swagger.tags = ['profile']
+    verifyJWT, 
+    getWatchHistory
+)
 
 export default router

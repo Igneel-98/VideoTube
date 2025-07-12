@@ -17,7 +17,12 @@ const doc = {
     description: 'Description',
     version: '1.0.0'
   },
-  host: 'localhost:4000'
+  host: 'localhost:4000',
+  tags: [
+    { name: 'auth', description: 'Authentication and token routes' },
+    { name: 'profile', description: 'Current user account settings' },
+    { name: 'channel', description: 'Public user channels and profiles' }
+  ]
 };
 
 const outputFile = './src/docs/generated/swagger-output.json';

@@ -19,9 +19,17 @@ const doc = {
   },
   host: 'localhost:4000',
   tags: [
+    { name: 'health', description: 'System health checks' },
     { name: 'auth', description: 'Authentication and token routes' },
     { name: 'profile', description: 'Current user account settings' },
-    { name: 'channel', description: 'Public user channels and profiles' }
+    { name: 'channel', description: 'Public user channels and profiles' },
+    { name: 'tweets', description: 'Tweet creation and management' },
+    { name: 'subscriptions', description: 'Channel subscriptions' },
+    { name: 'videos', description: 'Video content management' },
+    { name: 'comments', description: 'Comments on videos and tweets' },
+    { name: 'likes', description: 'Like toggling for videos and tweets' },
+    { name: 'playlist', description: 'Playlists management' },
+    { name: 'dashboard', description: 'Dashboard analytics and reporting' }
   ]
 };
 

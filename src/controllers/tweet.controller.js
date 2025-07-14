@@ -52,7 +52,7 @@ const createTweet = asyncHandler(async (req, res) => {
 
 const getUserTweets = asyncHandler(async (req, res) => {
     // extract userIdentifier from params 
-    const { userIdentifier } = req.params;
+    const { userId: userIdentifier } = req.params;
 
     // determine if its username or userID
     let user;
@@ -79,13 +79,15 @@ const getUserTweets = asyncHandler(async (req, res) => {
     }
 
     // fetch tweets 
-    const tweet = await Tweet.findOne({owner : user._id})
+    const tweets = await Tweet.find({owner : user._id})
         .sort({createdAt: -1})
-        .skip(skip)
+        .skip(skip) 
         .limit(limit)
 
     // total tweets
     const totalTweets = await Tweet.countDocuments({ owner: user._id});
+
+    const totalPages = Math.ceil(totalTweets / limit);
 
     // prepare response
     const responseData = {
@@ -190,7 +192,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
     }
 
     // delete tweet
-    const tweetDeleted = await Tweet.deleteOne(tweetId);
+    const tweetDeleted = await Tweet.deleteOne(tweet);
     if(!tweetDeleted){
         throw new ApiError(400, "Tweet deletion failed")
     }

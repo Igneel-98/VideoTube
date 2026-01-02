@@ -1,5 +1,5 @@
 {
-  "name": "backend-video-streaming",
+  "name": "VidFlow",
   "version": "1.0.0",
   "description": "A video streaming backend like youtube learning from \"Chai Aur Code\" youtube channel.",
   "type": "module",
